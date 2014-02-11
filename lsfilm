@@ -1,0 +1,66 @@
+#!/bin/bash
+# man
+# sort by       -n      name
+#               -r      imdb rating
+#               -y      year (defaut)
+#               -t      time
+
+# BDD
+imdbbdd="$HOME/.imdbbdd.xml"
+
+case "$1" in
+    -n)
+        col=4;;
+    -r)
+        col=3;;
+    -y)
+        col=1;;
+    -t)
+        col=2;;
+    -h)
+        echo -e "sort by\n -n   name \n -r      imdb rating \n -y       year (defaut) \n -t     time"
+        exit 0;;
+    *)
+        col=1
+esac
+
+toxml () {
+    sed 's/>/&gt;/g
+s/</&lt;/g
+s/\"/&quot;/g
+s/&/&amps;/g'
+}
+
+
+convertsecs() {
+    ((s=${1}/1000))
+    ((h=${s}/3600))
+    ((m=(${s}%3600)/60))
+    printf "%01dh%02d" $h $m
+}
+
+
+liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4")
+
+while read film
+do
+    
+    filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | tr "'" " " | toxml)
+    id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n $imdbbdd)
+
+    if [ -n "$id" ]
+    then
+        title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n $imdbbdd)
+        year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n $imdbbdd)
+        time=$(xmlstarlet sel -t -m "//film[id='$id']" -v time -n $imdbbdd)
+        rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n $imdbbdd)
+    else
+        #time=$(mplayer -identify -vo null -ao null -frames 0 "$film" | grep "ID_LENGTH" | awk -F"=" '{print $2}' | sed 's/\..*//')
+        time=$(convertsecs $(mediainfo '--Inform=Video;%Duration%' "$film"))
+        title=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}')
+    fi
+    listefinal="$listefinal ;; $year ; $time ; $rating ; $title"
+
+done <<< "$liste"
+
+echo -e "$(sed 's/;;/\\n/g' <<< $listefinal)" | sort -t $';' -k$col,$col | column -t -s ";"
