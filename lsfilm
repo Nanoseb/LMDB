@@ -44,20 +44,20 @@ convertsecs() {
 }
 
 
-liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4\|.wmv")
+liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i "\.mkv\|\.avi\|\.mp4\|\.wmv" | awk -F"/" '{print $2}')
 
 while read film
 do
-    
-    filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | tr "'" " " | toxml)
+
+    filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | sed 's/\ $//' | tr "'" " " | toxml)
     id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n "$lmdbbdd")
 
     if [ -n "$id" ]
     then
-        title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n $imdbbdd)
-        year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n $imdbbdd)
-        time=$(xmlstarlet sel -t -m "//film[id='$id']" -v time -n $imdbbdd)
-        rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n $imdbbdd)
+        title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n "$lmdbbdd")
+        year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n "$lmdbbdd")
+        time=$(xmlstarlet sel -t -m "//film[id='$id']" -v time -n "$lmdbbdd")
+        rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n "$lmdbbdd")
     else
         #time=$(mplayer -identify -vo null -ao null -frames 0 "$film" | grep "ID_LENGTH" | awk -F"=" '{print $2}' | sed 's/\..*//')
         time=$(convertsecs $(mediainfo '--Inform=Video;%Duration%' "$film"))

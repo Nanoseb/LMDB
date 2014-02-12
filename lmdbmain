@@ -22,7 +22,7 @@ fi
 
 if [ "$1" = "-bdd" ]
 then
-    liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4\|.wmv")
+    liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i "\.mkv\|\.avi\|\.mp4\|\.wmv")
     nb=$(wc -l <<< "$liste")
     i=1
 
