@@ -1,6 +1,6 @@
 #!/bin/bash
 # Lmdb v2.0 by Nanoseb
-# needs : xmllint xmlstarlet zenity
+# needs : xmlstarlet zenity
 # man: -i file/movie name : shows info about file in a graphical view (zenity) (and write/update info in the bdd if $2 is a file)
 #      -c file/movie name : shows info about file in console (and write/update info in the bdd if $2 is a file)
 #      -a file : ask for the url of the imdb movie page to add the file in the base, usefull when the file name is not the exact title of the movie
@@ -8,18 +8,24 @@
 
 
 #temp
-imdbpage="/tmp/imdbpage"
-imdbimage="/tmp/imdbimage"
+lmdbpage="/tmp/lmdbpage"
+lmdbimage="/tmp/lmdbimage"
 
 # BDD
-imdbbdd="$HOME/.lmdbbdd.xml"
+lmdbbdd="$HOME/.lmdbbdd.xml"
+
+if [ ! -f "$lmdbbdd" ]
+then
+    echo -e "<xml>\n<table>\n</table>\n</xml>" > "$lmdbbdd"
+fi 
+
 
 imagedl () {
-    wget -q -O $imdbimage "$1"
-    if [ -s "$imdbimage" ]
+    wget -q -O "$lmdbimage" "$1"
+    if [ -s "$lmdbimage" ]
     then
-        display $imdbimage
-        rm "$imdbimage"
+        display "$lmdbimage"
+        rm "$lmdbimage"
     fi
 }
 
@@ -37,20 +43,20 @@ s/&/&amps;/g'
 }
 
 omdbapi () {
-    wget -q -O $imdbpage "http://www.omdbapi.com/?r=XML&plot=full&i=${id}"
+    wget -q -O "$lmdbpage" "http://www.omdbapi.com/?r=XML&plot=full&i=${id}"
 
-    erreur=$(xmllint --xpath "//root/@response" "$imdbpage" | awk -F"\"" '{print $2}')
-    image=$(xmllint --xpath "//root/movie/@poster" "$imdbpage" | awk -F"\"" '{print $2}')
-    rating=$(xmllint --xpath "//root/movie/@imdbRating" "$imdbpage" | awk -F"\"" '{print $2}')
-    plot=$(xmllint --xpath "//root/movie/@plot" "$imdbpage"  | awk -F"\"" '{print $2}')
-    title=$(xmllint --xpath "//root/movie/@title" "$imdbpage"  | awk -F"\"" '{print $2}')
-    year=$(xmllint --xpath "//root/movie/@year" "$imdbpage" | awk -F"\"" '{print $2}')
-    time=$(xmllint --xpath "//root/movie/@runtime" "$imdbpage" | awk -F"\"" '{print $2}' | sed 's/\ //g' | sed 's/min//')
-    real=$(xmllint --xpath "//root/movie/@director" "$imdbpage" | awk -F"\"" '{print $2}')
-    genre=$(xmllint --xpath "//root/movie/@genre" "$imdbpage" | awk -F"\"" '{print $2}')
-    actors=$(xmllint --xpath "//root/movie/@actors" "$imdbpage" | awk -F"\"" '{print $2}')
-
-    rm $imdbpage
+    erreur=$(xmlstarlet sel -t -m "//root/movie" -v @response -n "$lmdbpage")
+    image=$(xmlstarlet sel -t -m "//root/movie" -v @poster -n "$lmdbpage")
+    rating=$(xmlstarlet sel -t -m "//root/movie" -v @imdbRating -n "$lmdbpage")
+    plot=$(xmlstarlet sel -t -m "//root/movie" -v @plot -n "$lmdbpage")
+    title=$(xmlstarlet sel -t -m "//root/movie" -v @title -n "$lmdbpage")
+    year=$(xmlstarlet sel -t -m "//root/movie" -v @year -n "$lmdbpage")
+    time=$(xmlstarlet sel -t -m "//root/movie" -v @runtime -n "$lmdbpage")
+    real=$(xmlstarlet sel -t -m "//root/movie" -v @director -n "$lmdbpage")
+    genre=$(xmlstarlet sel -t -m "//root/movie" -v @genre -n "$lmdbpage")
+    actors=$(xmlstarlet sel -t -m "//root/movie" -v @actors -n "$lmdbpage")
+    
+    rm "$lmdbpage"
 
 }
 
@@ -72,8 +78,8 @@ ecritcache () {
 
         ################ écriture de la BDD ###########################
 
-        sed -i '$d' $imdbbdd
-        sed -i '$d' $imdbbdd
+        sed -i '$d' "$lmdbbdd"
+        sed -i '$d' "$lmdbbdd"
 
         echo -e "<film>
             <id>$id</id>
@@ -90,46 +96,46 @@ ecritcache () {
             <chemin>$chemin</chemin>
             </film>
             </table>
-            </xml>" >> $imdbbdd
+            </xml>" >> "$lmdbbdd"
         ################################################################
     fi
 }
 
 
 litcache () {
-    title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n $imdbbdd)
-    year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n $imdbbdd)
-    time=$(xmlstarlet sel -t -m "//film[id='$id']" -v time -n $imdbbdd)
-    real=$(xmlstarlet sel -t -m "//film[id='$id']" -v real -n $imdbbdd)
-    genre=$(xmlstarlet sel -t -m "//film[id='$id']" -v genre -n $imdbbdd)
-    actors=$(xmlstarlet sel -t -m "//film[id='$id']" -v actors -n $imdbbdd)
-    rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n $imdbbdd)
-    plot=$(xmlstarlet sel -t -m "//film[id='$id']" -v plot -n $imdbbdd)
-    image=$(xmlstarlet sel -t -m "//film[id='$id']" -v image -n $imdbbdd)
+    title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n "$lmdbbdd")
+    year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n "$lmdbbdd")
+    time=$(xmlstarlet sel -t -m "//film[id='$id']" -v time -n "$lmdbbdd")
+    real=$(xmlstarlet sel -t -m "//film[id='$id']" -v real -n "$lmdbbdd")
+    genre=$(xmlstarlet sel -t -m "//film[id='$id']" -v genre -n "$lmdbbdd")
+    actors=$(xmlstarlet sel -t -m "//film[id='$id']" -v actors -n "$lmdbbdd")
+    rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n "$lmdbbdd")
+    plot=$(xmlstarlet sel -t -m "//film[id='$id']" -v plot -n "$lmdbbdd")
+    image=$(xmlstarlet sel -t -m "//film[id='$id']" -v image -n "$lmdbbdd")
 
     # mise à jour du chemin et du filename dans la bdd
     if [ -f "$chemin" ]
     then
-        xmlstarlet ed -u "/xml/table/film[id='$id']/chemin" -v "$chemin" $imdbbdd > $imdbpage
-        mv $imdbpage $imdbbdd
+        xmlstarlet ed -u "/xml/table/film[id='$id']/chemin" -v "$chemin" "$lmdbbdd" > "$lmdbpage"
+        mv "$lmdbpage" "$lmdbbdd"
 
-        xmlstarlet ed -u "/xml/table/film[id='$id']/filename" -v "$filename" $imdbbdd > $imdbpage
-        mv $imdbpage $imdbbdd
+        xmlstarlet ed -u "/xml/table/film[id='$id']/filename" -v "$filename" "$lmdbbdd" > "$lmdbpage"
+        mv "$lmdbpage" "$lmdbbdd"
     fi
 }
 
 
-if [ $1  = "-a" ]  #argument pour rentrer manuelement l'url de la page imdb
+if [ "$1"  = "-a" ]  #argument pour rentrer manuelement l'url de la page imdb
 then
     arg="-c"
-    id=$(zenity --entry --title "Script LMDb" | awk -F"/" '{print $5}')
+    id=$(zenity --entry --title --width=220 -text "Entre l'url de la fiche IMDb" "Script LMDb" | awk -F"/" '{print $5}')
     film="$2"
     chemin=$(toxml <<< "$PWD/$(sed 's/^\.\///' <<< "$film")")
     filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | sed 's/\ $//' | tr "'" " " | toxml)
-    xmlstarlet ed -d "/xml/table/film[filename='$filename']" $imdbbdd > $imdbpage
-    mv $imdbpage $imdbbdd
-    xmlstarlet ed -d "/xml/table/film[id='$id']" $imdbbdd > $imdbpage
-    mv $imdbpage $imdbbdd
+    xmlstarlet ed -d "/xml/table/film[filename='$filename']" "$lmdbbdd" > "$lmdbpage"
+    mv "$lmdbpage" "$lmdbbdd"
+    xmlstarlet ed -d "/xml/table/film[id='$id']" "$lmdbbdd" > "$lmdbpage"
+    mv "$lmdbpage" "$lmdbbdd"
     ecritcache
 
 else
@@ -152,7 +158,7 @@ else
     filename=$(tr "'" " " <<< "$filename" | toxml)
 
 
-    id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n $imdbbdd)
+    id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n "$lmdbbdd")
 
     if [ -n "$id" ]    # test si le film est en cache
     then
@@ -162,7 +168,7 @@ else
 
         id=$(curl -s "http://www.imdb.com/find?s=tt&q=$motclef" | grep -m 1 "<a href=\"/title/" | awk -F"/" '{print $3}')
 
-        dejala=$(grep "$id" $imdbbdd)
+        dejala=$(grep "$id" "$lmdbbdd") # déjà dans la bdd ?
 
         if [ -n "$dejala" ]
         then

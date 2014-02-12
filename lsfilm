@@ -8,7 +8,7 @@
 #               -t      time
 
 # BDD
-imdbbdd="$HOME/.lmdbbdd.xml"
+lmdbbdd="$HOME/.lmdbbdd.xml"
 
 
 
@@ -50,7 +50,7 @@ while read film
 do
     
     filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | tr "'" " " | toxml)
-    id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n $imdbbdd)
+    id=$(xmlstarlet sel -t -m "//film[filename='$filename']" -v id -n "$lmdbbdd")
 
     if [ -n "$id" ]
     then
