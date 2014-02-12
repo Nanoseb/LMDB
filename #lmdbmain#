@@ -1,5 +1,5 @@
 #!/bin/bash
-# By Nanoseb
+# LMDbmain by Nanoseb
 # needs xmlstarlet zenity
 # man : -bdd : generate the bdd for the current folder ($PWD) with the script lmdb
 #            : interact with you to chose the perfect movie !
@@ -8,12 +8,15 @@
 lmdbbdd="$HOME/.lmdbbdd.xml"
 lmdbimage="/tmp/lmdbimage"
 
-
+if [ ! -f "$lmdbbdd" ]
+then
+    echo -e "<xml>\n<table>\n</table>\n</xml>" > "$lmdbbdd"
+fi 
 
 
 if [ "$1" = "-bdd" ]
 then
-    liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4")
+    liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4\|.wmv")
     nb=$(wc -l <<< "$liste")
     i=1
 

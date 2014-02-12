@@ -1,4 +1,6 @@
 #!/bin/bash
+# lsfilm by Nanoseb
+# needs xmlstarlet and mediainfo or mplayer
 # man
 # sort by       -n      name
 #               -r      imdb rating
@@ -6,7 +8,9 @@
 #               -t      time
 
 # BDD
-imdbbdd="$HOME/.imdbbdd.xml"
+imdbbdd="$HOME/.lmdbbdd.xml"
+
+
 
 case "$1" in
     -n)
@@ -40,7 +44,7 @@ convertsecs() {
 }
 
 
-liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4")
+liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i ".mkv\|.avi\|.mp4\|.wmv")
 
 while read film
 do
