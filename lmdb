@@ -51,7 +51,7 @@ omdbapi () {
     plot=$(xmlstarlet sel -t -m "//root/movie" -v @plot -n "$lmdbpage")
     title=$(xmlstarlet sel -t -m "//root/movie" -v @title -n "$lmdbpage")
     year=$(xmlstarlet sel -t -m "//root/movie" -v @year -n "$lmdbpage")
-    time=$(xmlstarlet sel -t -m "//root/movie" -v @runtime -n "$lmdbpage")
+    time=$(xmlstarlet sel -t -m "//root/movie" -v @runtime -n "$lmdbpage" | sed 's/\ //g' | sed 's/min//g')
     real=$(xmlstarlet sel -t -m "//root/movie" -v @director -n "$lmdbpage")
     genre=$(xmlstarlet sel -t -m "//root/movie" -v @genre -n "$lmdbpage")
     actors=$(xmlstarlet sel -t -m "//root/movie" -v @actors -n "$lmdbpage")
