@@ -122,7 +122,9 @@ litcache () {
 
         xmlstarlet ed -u "/xml/table/film[id='$id']/filename" -v "$filename" "$lmdbbdd" > "$lmdbpage"
         mv "$lmdbpage" "$lmdbbdd"
-    fi
+    else
+	chemin=$(xmlstarlet sel -t -m "//film[id='$id']" -v chemin -n "$lmdbbdd")
+    fi 
 }
 
 
@@ -188,7 +190,7 @@ then
     then
         imagedl $image &
     fi
-    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
+    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot \n $2" | zenity --text-info --title="Script LMDb"
     test=$?
     pkill display
     if [ "$test" = 0 ]
