@@ -6,6 +6,7 @@
 #      -a file : ask for the url of the imdb movie page to add the file in the base, usefull when the file name is not the exact title of the movie
 #      file    : write info in the bdd
 
+player=mplayer
 
 #temp
 lmdbpage="/tmp/lmdbpage"
@@ -128,7 +129,8 @@ litcache () {
 if [ "$1"  = "-a" ]  #argument pour rentrer manuelement l'url de la page imdb
 then
     arg="-c"
-    id=$(zenity --entry --title --width=220 -text "Entre l'url de la fiche IMDb" "Script LMDb" | awk -F"/" '{print $5}')
+    id=$(zenity --entry --width=220 --text "Entre l'url de la fiche IMDb"  --title "Script LMDb" | awk -F"/" '{print $5}')
+
     film="$2"
     chemin=$(toxml <<< "$PWD/$(sed 's/^\.\///' <<< "$film")")
     filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | sed 's/\ $//' | tr "'" " " | toxml)
@@ -187,7 +189,13 @@ then
         imagedl $image &
     fi
     echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
+    test=$?
     pkill display
+    if [ "$test" = 0 ]
+    then
+	$player "$chemin"
+    fi 
+
 else
     if [ $arg == "-c" ]
     then
