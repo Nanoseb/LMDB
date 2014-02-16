@@ -30,10 +30,10 @@ then
     do
         lmdb "$film"
         #echo $film
-        ((i=$i+1))
-        bc <<< $(echo "100*$i/$nb")
-    done <<< "$liste" | zenity --progress --no-cancel --title "Script LMDb" --auto-close --text "Mise à jour de la Bdd" --width=220
-    zenity --info --title "Script LMDb" --text "Mise à jour faite" --width=220
+        ((i=i+1))
+        bc <<< "$(echo "100*$i/$nb")"
+    done <<< "$liste" | zenity --progress --no-cancel --title "Script LMDb" --auto-close --text "Mise à jour de la Bdd" --width=220 2> /dev/null
+    zenity --info --title "Script LMDb" --text "Mise à jour faite" --width=220 2> /dev/null
     exit 0
 fi
 
@@ -53,6 +53,7 @@ genrec=$(xmlstarlet sel -T -t -m "//film" -v genre -n "$lmdbbdd" | sed 's/,\ /\n
 
 
 ratingc=$(echo -e ";5\.|;6\.|;7\.|;8\.|;9\.|;10\.\n5\n;6\.|;7\.|;8\.|;9\.\n6\n;7\.|;8\.|;9\.\n7\n;8\.|;9\.\n8\n;9\.\n9" |  zenity --title="Script LMDb" --list --width=220 --height=200 --column=1 --column 1 --text="Note supérieur à" --hide-header --hide-column 1)
+
 
 timec=$(echo -e "\n;0h\n<1h\n\n;1h\n1h<x<2h\n\n;2h\n2h<x<3h\n\n;3h|;4h|;5h\n>3h" |  zenity --title="Script LMDb" --list --checklist --multiple --width=220 --height=200 --column 1 --column 2 --column 3 --text="Durée" --hide-header --hide-column 2) 
 
@@ -113,7 +114,7 @@ do
     plot=$(xmlstarlet sel -t -m "//film[id='$id']" -v plot -n "$lmdbbdd")
     image=$(xmlstarlet sel -t -m "//film[id='$id']" -v image -n "$lmdbbdd")
 
-    imagedl $image &
+    imagedl "$image" &
 
     echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
     test=$?

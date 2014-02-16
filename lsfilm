@@ -38,8 +38,8 @@ s/&/&amps;/g'
 
 convertsecs() {
     ((s=${1}/1000))
-    ((h=${s}/3600))
-    ((m=(${s}%3600)/60))
+    ((h=s/3600))
+    ((m=(s%3600)/60))
     printf "%01dh%02d" $h $m
 }
 
@@ -60,11 +60,11 @@ do
         rating=$(xmlstarlet sel -t -m "//film[id='$id']" -v rating -n "$lmdbbdd")
     else
         #time=$(mplayer -identify -vo null -ao null -frames 0 "$film" | grep "ID_LENGTH" | awk -F"=" '{print $2}' | sed 's/\..*//')
-        time=$(convertsecs $(mediainfo '--Inform=Video;%Duration%' "$film"))
+        time=$(convertsecs "$(mediainfo '--Inform=Video;%Duration%' "$film")")
         title=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}')
     fi
     listefinal="$listefinal ;; $year ; $time ; $rating ; $title"
 
 done <<< "$liste"
 
-echo -e "$(sed 's/;;/\\n/g' <<< $listefinal)" | sort -t $';' -k$col,$col | column -t -s ";"
+echo -e "$(sed 's/;;/\\n/g' <<< "$listefinal")" | sort -t $';' -k$col,$col | column -t -s ";"

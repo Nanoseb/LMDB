@@ -18,7 +18,7 @@ lmdbbdd="$HOME/.lmdbbdd.xml"
 if [ ! -f "$lmdbbdd" ]
 then
     echo -e "<xml>\n<table>\n</table>\n</xml>" > "$lmdbbdd"
-fi 
+fi
 
 
 imagedl () {
@@ -56,12 +56,13 @@ omdbapi () {
     real=$(xmlstarlet sel -t -m "//root/movie" -v @director -n "$lmdbpage")
     genre=$(xmlstarlet sel -t -m "//root/movie" -v @genre -n "$lmdbpage")
     actors=$(xmlstarlet sel -t -m "//root/movie" -v @actors -n "$lmdbpage")
-    
+
     rm "$lmdbpage"
 
 }
 
 ecritcache () {
+
 
     omdbapi
     if [ "$erreur" = "False" ]
@@ -72,7 +73,7 @@ ecritcache () {
 
     if [ -f "$chemin" ]
     then
-        if [ -n $(grep "N/A" <<< "$time") ]
+        if [[ -n "$(grep "N/A" <<< "$time")" ]]
         then
             time=$(convertmins "$time")
         fi
@@ -123,8 +124,8 @@ litcache () {
         xmlstarlet ed -u "/xml/table/film[id='$id']/filename" -v "$filename" "$lmdbbdd" > "$lmdbpage"
         mv "$lmdbpage" "$lmdbbdd"
     else
-	chemin=$(xmlstarlet sel -t -m "//film[id='$id']" -v chemin -n "$lmdbbdd")
-    fi 
+        chemin=$(xmlstarlet sel -t -m "//film[id='$id']" -v chemin -n "$lmdbbdd")
+    fi
 }
 
 
@@ -184,22 +185,22 @@ else
 fi
 
 
-if [ $arg == "-i" ]
+if [ "$arg" == "-i" ]
 then
     if [ -n "$image" ]
     then
-        imagedl $image &
+        imagedl "$image" &
     fi
-    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot \n $2" | zenity --text-info --title="Script LMDb"
+    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
     test=$?
     pkill display
-    if [ "$test" = 0 ]
+    if [ "$test" = 0 ] && [ -f "$chemin" ]
     then
-	$player "$chemin"
-    fi 
+        $player "$chemin"
+    fi
 
 else
-    if [ $arg == "-c" ]
+    if [ "$arg" == "-c" ]
     then
         echo -e "$title ($year) - $time \n de $real \n avec $actors \n $rating/10 \n $plot"
     fi
