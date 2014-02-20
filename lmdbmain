@@ -155,7 +155,7 @@ do
     imagedl "$image" &
 
     echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="LMDb"
-    test
+    test=$?
     pkill display
 
 
