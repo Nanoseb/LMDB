@@ -14,11 +14,6 @@ lmdbbdd="$HOME/.lmdbbdd.xml"
 # temp
 lmdbimage="/tmp/lmdbimage"
 
-if [ ! -f "$lmdbbdd" ]
-then
-    echo -e "<xml>\n<table>\n</table>\n</xml>" > "$lmdbbdd"
-fi 
-
 
 if [ "$1" = "-bdd" ]
 then
@@ -32,11 +27,16 @@ then
         #echo $film
         ((i=i+1))
         bc <<< "$(echo "100*$i/$nb")"
-    done <<< "$liste" | zenity --progress --no-cancel --title "Script LMDb" --auto-close --text "Mise à jour de la Bdd" --width=220 2> /dev/null
-    zenity --info --title "Script LMDb" --text "Mise à jour faite" --width=220 2> /dev/null
+    done <<< "$liste" | zenity --progress --no-cancel --title "LMDb" --auto-close --text "Mise à jour de la Bdd" --width=220 2> /dev/null
+    zenity --info --title "LMDb" --text "Mise à jour faite" --width=220 2> /dev/null
     exit 0
 fi
 
+
+if [ ! -f "$lmdbbdd" ]
+then
+   exit 1
+fi 
 
 
 
@@ -49,15 +49,25 @@ imagedl () {
     fi
 }
 
-vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="Script LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
+vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
 
-if [ -z "vuc" ]
+if [ $? = 1 ] # test si le bouton annuler est pressé
+then
+    exit 0
+fi 
+
+if [ -z "vuc" ] # si rien n'est choisis
 then
    vuc=";"
 fi
 
 
-genrec=$(xmlstarlet sel -T -t -m "//film" -v "concat(genre,';',vu,';')" -n "$lmdbbdd" | grep -E "$vuc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="Script LMDb" --text="Genre :" --height=340 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+genrec=$(xmlstarlet sel -T -t -m "//film" -v "concat(genre,';',vu,';')" -n "$lmdbbdd" | grep -E "$vuc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Genre :" --height=340 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+if [ $? = 1 ]
+then
+    exit 0
+fi
 
 if [ -z "$genrec" ]
 then
@@ -65,7 +75,12 @@ then
 fi
 
 
-ratingc=$(echo -e ";5\.|;6\.|;7\.|;8\.|;9\.|;10\.\n5\n;6\.|;7\.|;8\.|;9\.\n6\n;7\.|;8\.|;9\.\n7\n;8\.|;9\.\n8\n;9\.\n9" |  zenity --title="Script LMDb" --list --width=220 --height=200 --column=1 --column 1 --text="Note supérieur à" --hide-header --hide-column 1)
+ratingc=$(echo -e ";5\.|;6\.|;7\.|;8\.|;9\.|;10\.\n5\n;6\.|;7\.|;8\.|;9\.\n6\n;7\.|;8\.|;9\.\n7\n;8\.|;9\.\n8\n;9\.\n9" |  zenity --title="LMDb" --list --width=220 --height=200 --column=1 --column 1 --text="Note supérieur à" --hide-header --hide-column 1)
+
+if [ $? = 1 ]
+then
+    exit 0
+fi
 
 if [ -z "$ratingc" ]
 then
@@ -73,7 +88,12 @@ then
 fi
 
 
-timec=$(echo -e "\n;0h\n<1h\n\n;1h\n1h<x<2h\n\n;2h\n2h<x<3h\n\n;3h|;4h|;5h\n>3h" |  zenity --title="Script LMDb" --list --checklist --multiple --width=220 --height=200 --column 1 --column 2 --column 3 --text="Durée" --hide-header --hide-column 2) 
+timec=$(echo -e "\n;0h\n<1h\n\n;1h\n1h<x<2h\n\n;2h\n2h<x<3h\n\n;3h|;4h|;5h\n>3h" |  zenity --title="LMDb" --list --checklist --multiple --width=220 --height=200 --column 1 --column 2 --column 3 --text="Durée" --hide-header --hide-column 2) 
+
+if [ $? = 1 ]
+then
+    exit 0
+fi
 
 if [ -z "$timec" ]
 then
@@ -81,14 +101,24 @@ then
 fi
 
 
-realc=$(xmlstarlet sel -T -t -m "//film" -v "concat(real,';',vu,';',genre,';',rating,';',time)"  -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="Script LMDb" --text="Réalisateurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+realc=$(xmlstarlet sel -T -t -m "//film" -v "concat(real,';',vu,';',genre,';',rating,';',time)"  -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Réalisateurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+if [ $? = 1 ]
+then
+    exit 0
+fi
 
 if [ -z "$realc" ]
 then
     realc=";"
 fi
 
-actorsc=$(xmlstarlet sel -T -t -m "//film" -v "concat(actors,';',vu,';',genre,';',rating,';',time,';',real)" -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | grep -E "$realc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="Script LMDb" --text="Acteurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+actorsc=$(xmlstarlet sel -T -t -m "//film" -v "concat(actors,';',vu,';',genre,';',rating,';',time,';',real)" -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | grep -E "$realc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Acteurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+if [ $? = 1 ]
+then
+    exit 0
+fi
 
 if [ -z "$actorsc" ]
 then
@@ -105,13 +135,12 @@ while [ $test = 1 ]
 do
 
 
-    id=$(xmlstarlet sel -T -t -m "//film" -v "concat(id,';',year,';',title,';',real,';',actors,';',rating,';',genre,';',time,';',vu,';')" -n "$lmdbbdd" | grep -E "$genrec" | grep -E "$ratingc" | grep -E "$realc" | grep -E "$timec" | grep -E "$actorsc" | grep -E "$vuc" | sort -rnt $';' -k2,2 | awk -F";" '{print $1 "\n" $2 "\n" $3 "\n" $4}' | zenity --list --title "Script LMDb" --text="Choix du film :" --width=560 --height=750 --column id --hide-column=1 --column Année --column Titre --column Réalisateur)
+    id=$(xmlstarlet sel -T -t -m "//film" -v "concat(id,';',year,';',title,';',real,';',actors,';',rating,';',genre,';',time,';',vu,';')" -n "$lmdbbdd" | grep -E "$genrec" | grep -E "$ratingc" | grep -E "$realc" | grep -E "$timec" | grep -E "$actorsc" | grep -E "$vuc" | sort -rnt $';' -k2,2 | awk -F";" '{print $1 "\n" $2 "\n" $3 "\n" $4}' | zenity --list --title "LMDb" --text="Choix du film :" --width=560 --height=750 --column id --hide-column=1 --column Année --column Titre --column Réalisateur)
 
     if [ $? = 1 ]
     then
         exit 0
     fi
-
 
     title=$(xmlstarlet sel -t -m "//film[id='$id']" -v title -n "$lmdbbdd")
     year=$(xmlstarlet sel -t -m "//film[id='$id']" -v year -n "$lmdbbdd")
@@ -125,8 +154,8 @@ do
 
     imagedl "$image" &
 
-    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
-    test=$?
+    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="LMDb"
+    test
     pkill display
 
 
@@ -144,8 +173,8 @@ else
     hdd=$(awk -F"/" '{print $2}'<<< "$chemin")
     if [ "$hdd" = "media" ]
     then
-        zenity --error --title "Script LMDb" --text "Ce film ne se trouve pas sur ton ordinateur, mais sur le disque dur : $(awk -F"/" '{print $3}' <<< "$chemin")" --width 400 --height 40
+        zenity --error --title "LMDb" --text "Ce film ne se trouve pas sur ton ordinateur, mais sur le disque dur : $(awk -F"/" '{print $3}' <<< "$chemin")" --width 400 --height 40
     else
-        zenity --error --title "Script LMDb" --text "Ce film ne se trouve pas sur ton ordinateur..."
+        zenity --error --title "LMDb" --text "Ce film ne se trouve pas sur ton ordinateur..."
     fi
 fi
