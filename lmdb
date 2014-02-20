@@ -73,7 +73,7 @@ ecritcache () {
 
     if [ -f "$chemin" ]
     then
-        if [[ -n "$(grep "N/A" <<< "$time")" ]]
+        if [ ! "$time" = "N/A" ]
         then
             time=$(convertmins "$time")
         fi
@@ -96,6 +96,7 @@ ecritcache () {
             <image>$image</image>
             <filename>$filename</filename>
             <chemin>$chemin</chemin>
+            <vu>non</vu>
             </film>
             </table>
             </xml>" >> "$lmdbbdd"
@@ -128,6 +129,9 @@ litcache () {
     fi
 }
 
+############################## FIN DES FONCTIONS ############################################################
+
+
 
 if [ "$1"  = "-a" ]  #argument pour rentrer manuelement l'url de la page imdb
 then
@@ -148,11 +152,17 @@ else
     if [ -z "$2" ]
     then
         film="$1"
-        arg="-m"
     else
         film="$2"
-        arg=$1
+        arg="$1"
     fi
+
+    #   if [ "$arg" = "-i" ]
+    #   then
+    #   #zenity --progress --pulsate --title "Script LMDb" --no-cancel &
+    #   zenity --progress --pulsate --title "Script LMDb" --no-cancel --width 220 &
+    #
+    #   fi
 
     chemin=$(toxml <<< "$PWD/$(sed 's/^\.\///' <<< "$film")")
 
@@ -191,12 +201,14 @@ then
     then
         imagedl "$image" &
     fi
+    #    killall zenity
     echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
     test=$?
     pkill display
     if [ "$test" = 0 ] && [ -f "$chemin" ]
     then
-        $player "$chemin"
+	
+	$player "$chemin"
     fi
 
 else
