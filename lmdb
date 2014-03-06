@@ -1,19 +1,24 @@
 #!/bin/bash
-# Lmdb v2.0 by Nanoseb
-# needs : xmlstarlet zenity
-# man: -i file/movie name : shows info about file in a graphical view (zenity) (and write/update info in the bdd if $2 is a file)
-#      -c file/movie name : shows info about file in console (and write/update info in the bdd if $2 is a file)
-#      -a file : ask for the url of the imdb movie page to add the file in the base, usefull when the file name is not the exact title of the movie
-#      file    : write info in the bdd
+# LMDb by Nanoseb
+# needs xmlstarlet zenity
+# Ce script fait des recherches sur imdb.com pour afficher des infos relatives a vos films de plusieurs façon
+# man
+#                               : affiche les infos du film (graphiquemant) par recherche
+# [film|fichier]                : affiche les infos du film en console
+# --bdd                         : ajoute le dossier courant à la base de donnée
+# --choix                       : pose des questions pour choisir le film parfait !
+# -i / --info  [film|fichier]   : affiche une fenêtre graphique (zenity) avec les infos du film
+# -c / --console [film|fichier] : affiche les infos du film en console
 
+# Video player
 player=mplayer
 
-#temp
-lmdbpage="/tmp/lmdbpage"
-lmdbimage="/tmp/lmdbimage"
-
-# BDD
+# cache
 lmdbbdd="$HOME/.lmdbbdd.xml"
+
+# temporaire
+lmdbtemp="/tmp/lmdbtemp$(tr -dc "[:alpha:]" < /dev/urandom | head -c 8)"
+
 
 if [ ! -f "$lmdbbdd" ]
 then
@@ -22,11 +27,11 @@ fi
 
 
 imagedl () {
-    wget -q -O "$lmdbimage" "$1"
-    if [ -s "$lmdbimage" ]
+    wget -q -O "$lmdbtemp" "$1"
+    if [ -s "$lmdbtemp" ]
     then
-        display "$lmdbimage"
-        rm "$lmdbimage"
+        display "$lmdbtemp"
+        rm "$lmdbtemp"
     fi
 }
 
@@ -35,6 +40,7 @@ convertmins() {
     ((m=${1}%60))
     printf "%01dh%02d" $h $m
 }
+
 
 toxml () {
     sed 's/>/&gt;/g
@@ -59,7 +65,17 @@ omdbapi () {
 
     rm "$lmdbpage"
 
+    if [ ! "$time" = "N/A" ]
+    then
+        time=$(convertmins "$time")
+    fi
+
 }
+
+
+
+
+
 
 ecritcache () {
 
@@ -73,10 +89,7 @@ ecritcache () {
 
     if [ -f "$chemin" ]
     then
-        if [ ! "$time" = "N/A" ]
-        then
-            time=$(convertmins "$time")
-        fi
+
 
         ################ écriture de la BDD ###########################
 
@@ -116,7 +129,7 @@ litcache () {
     plot=$(xmlstarlet sel -t -m "//film[id='$id']" -v plot -n "$lmdbbdd")
     image=$(xmlstarlet sel -t -m "//film[id='$id']" -v image -n "$lmdbbdd")
 
-    # mise à jour du chemin et du filename dans la bdd
+    # mise à jour du chemin et du filename dans la bdd ###########################################################
     if [ -f "$chemin" ]
     then
         xmlstarlet ed -u "/xml/table/film[id='$id']/chemin" -v "$chemin" "$lmdbbdd" > "$lmdbpage"
@@ -126,44 +139,12 @@ litcache () {
         mv "$lmdbpage" "$lmdbbdd"
     else
         chemin=$(xmlstarlet sel -t -m "//film[id='$id']" -v chemin -n "$lmdbbdd")
+        filename=$(xmlstarlet sel -t -m "//film[id='$id']" -v filename -n "$lmdbbdd")
     fi
 }
 
-############################## FIN DES FONCTIONS ############################################################
 
-
-
-if [ "$1"  = "-a" ]  #argument pour rentrer manuelement l'url de la page imdb
-then
-    arg="-c"
-    id=$(zenity --entry --width=220 --text "Entre l'url de la fiche IMDb"  --title "Script LMDb" | awk -F"/" '{print $5}')
-
-    film="$2"
-    chemin=$(toxml <<< "$PWD/$(sed 's/^\.\///' <<< "$film")")
-    filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | sed 's/\ $//' | tr "'" " " | toxml)
-    xmlstarlet ed -d "/xml/table/film[filename='$filename']" "$lmdbbdd" > "$lmdbpage"
-    mv "$lmdbpage" "$lmdbbdd"
-    xmlstarlet ed -d "/xml/table/film[id='$id']" "$lmdbbdd" > "$lmdbpage"
-    mv "$lmdbpage" "$lmdbbdd"
-    ecritcache
-
-else
-
-    if [ -z "$2" ]
-    then
-        film="$1"
-    else
-        film="$2"
-        arg="$1"
-    fi
-
-    #   if [ "$arg" = "-i" ]
-    #   then
-    #   #zenity --progress --pulsate --title "Script LMDb" --no-cancel &
-    #   zenity --progress --pulsate --title "Script LMDb" --no-cancel --width 220 &
-    #
-    #   fi
-
+recherchefilm () { ############################################################################## recherche les info à partir d'un chemin ou d'un nom de film
     chemin=$(toxml <<< "$PWD/$(sed 's/^\.\///' <<< "$film")")
 
     filename=$(basename "$film" | sed 's/\.[^.]*$//' | awk -F"[" '{print $1}' | sed 's/\ $//')
@@ -192,30 +173,219 @@ else
             ecritcache
         fi
     fi
-fi
+}
 
 
-if [ "$arg" == "-i" ]
-then
+
+litfilm () {
+
+    if [ -f "$chemin" ]
+    then
+        $player "$chemin"
+    else
+        hdd=$(awk -F"/" '{print $2}'<<< "$chemin")
+        if [ "$hdd" = "media" ]
+        then
+            zenity --error --title "LMDb" --text "Ce film ne se trouve pas sur ton ordinateur, mais sur le disque dur : $(awk -F"/" '{print $3}' <<< "$chemin")" --width 400 --height 40
+        else
+            zenity --error --title "LMDb" --text "Ce film ne se trouve pas sur ton ordinateur..."
+        fi
+    fi
+}
+
+affichagegtk () {
     if [ -n "$image" ]
     then
         imagedl "$image" &
     fi
-    #    killall zenity
+
     echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
     test=$?
     pkill display
-    if [ "$test" = 0 ] && [ -f "$chemin" ]
+    if [ "$test" = 0 ]
     then
-	
-	$player "$chemin"
+        litfilm
+    fi
+}
+
+
+
+
+bdd () {
+    liste=$(find -maxdepth 1 ! -regex '.*/\..*' -type f | grep -i "\.mkv\|\.avi\|\.mp4\|\.wmv")
+    nb=$(wc -l <<< "$liste")
+    i=1
+
+    while read film
+    do
+        recherchefilm
+        #echo $film
+        ((i=i+1))
+        bc <<< "$(echo "100*$i/$nb")"
+    done <<< "$liste" | zenity --progress --no-cancel --title "LMDb" --auto-close --text "Mise à jour de la Bdd" --width=220 2> /dev/null
+    zenity --info --title "LMDb" --text "Mise à jour faite" --width=220 2> /dev/null
+
+}
+
+
+
+choixfilm () {
+
+    vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
+
+    if [ $? = 1 ] # test si le bouton annuler est pressé
+    then
+        exit 0
     fi
 
-else
-    if [ "$arg" == "-c" ]
+    if [ -z "vuc" ] # si rien n'est choisis
     then
-        echo -e "$title ($year) - $time \n de $real \n avec $actors \n $rating/10 \n $plot"
+        vuc=";"
     fi
+
+
+    genrec=$(xmlstarlet sel -T -t -m "//film" -v "concat(genre,';',vu,';')" -n "$lmdbbdd" | grep -E "$vuc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Genre :" --height=340 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+    if [ $? = 1 ]
+    then
+        exit 0
+    fi
+
+    if [ -z "$genrec" ]
+    then
+        genrec=";"
+    fi
+
+
+    ratingc=$(echo -e ";5\.|;6\.|;7\.|;8\.|;9\.|;10\.\n5\n;6\.|;7\.|;8\.|;9\.\n6\n;7\.|;8\.|;9\.\n7\n;8\.|;9\.\n8\n;9\.\n9" |  zenity --title="LMDb" --list --width=220 --height=200 --column=1 --column 1 --text="Note supérieur à" --hide-header --hide-column 1)
+
+    if [ $? = 1 ]
+    then
+        exit 0
+    fi
+
+    if [ -z "$ratingc" ]
+    then
+        ratingc=";"
+    fi
+
+
+    timec=$(echo -e "\n;0h\n<1h\n\n;1h\n1h<x<2h\n\n;2h\n2h<x<3h\n\n;3h|;4h|;5h\n>3h" |  zenity --title="LMDb" --list --checklist --multiple --width=220 --height=200 --column 1 --column 2 --column 3 --text="Durée" --hide-header --hide-column 2)
+
+    if [ $? = 1 ]
+    then
+        exit 0
+    fi
+
+    if [ -z "$timec" ]
+    then
+        timec=";"
+    fi
+
+
+    realc=$(xmlstarlet sel -T -t -m "//film" -v "concat(real,';',vu,';',genre,';',rating,';',time)"  -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Réalisateurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+    if [ $? = 1 ]
+    then
+        exit 0
+    fi
+
+    if [ -z "$realc" ]
+    then
+        realc=";"
+    fi
+
+    actorsc=$(xmlstarlet sel -T -t -m "//film" -v "concat(actors,';',vu,';',genre,';',rating,';',time,';',real)" -n "$lmdbbdd" | grep -E "$vuc" | grep -E "$genrec" | grep -E "$ratingc" |  grep -E "$timec" | grep -E "$realc" | awk -F";" '{print $1}' | sed 's/,\ /\n/g' | grep -v "N/A" | sort | uniq -c | sort -rn | sed 's/^[^A-Z]*/\n/' | zenity --title="LMDb" --text="Acteurs :" --height=500 --width=220 --hide-header --list --multiple --checklist --column=1 --column=2)
+
+    if [ $? = 1 ]
+    then
+        exit 0
+    fi
+
+    if [ -z "$actorsc" ]
+    then
+        actorsc=";"
+    fi
+
+
+
+    test=1
+
+    while [ $test = 1 ]
+    do
+
+        id=$(xmlstarlet sel -T -t -m "//film" -v "concat(id,';',year,';',title,';',real,';',actors,';',rating,';',genre,';',time,';',vu,';')" -n "$lmdbbdd" | grep -E "$genrec" | grep -E "$ratingc" | grep -E "$realc" | grep -E "$timec" | grep -E "$actorsc" | grep -E "$vuc" | sort -rnt $';' -k2,2 | awk -F";" '{print $1 "\n" $2 "\n" $3 "\n" $4}' | zenity --list --title "LMDb" --text="Choix du film :" --width=560 --height=750 --column id --hide-column=1 --column Année --column Titre --column Réalisateur)
+
+        if [ $? = 1 ]
+        then
+            exit 0
+        fi
+
+        litcache
+
+        affichagegtk
+
+    done
+
+
+
+}
+
+manuel () {
+    echo -e "man LMDb :
+                              : affiche les infos du film (graphiquemant) par recherche
+[film|fichier]                : affiche les infos du film en console
+--bdd                         : ajoute le dossier courant à la base de donnée
+--choix                       : pose des questions pour choisir le film parfait !
+-i / --info  [film|fichier]   : affiche une fenêtre graphique (zenity) avec les infos du film
+-c / --console [film|fichier] : affiche les infos du film en console
+"
+}
+
+
+
+if [ -n "$1" ]
+then
+    if [ -n "$2" ]
+    then
+        ## il y a 2 arguments
+
+        case "$1" in
+            -i | --info)
+                film="$2"
+                recherchefilm
+                affichagegtk
+                ;;
+            -c | --console)
+                film="$2"
+                recherchefilm
+                echo -e "$title ($year) - $time \n de $real \n avec $actors \n $rating/10 \n $plot"
+                ;;
+            *)
+                manuel
+                ;;
+        esac
+    else
+        ## il y a 1 argument
+	case "$1" in
+	    --bdd)
+		bdd
+		;;
+	    --choix)
+		choixfilm
+		;;
+	    *)
+		film="$1"
+		recherchefilm
+		echo -e "$title ($year) - $time \n de $real \n avec $actors \n $rating/10 \n $plot"
+		;;
+	esac
+    fi 
+else
+    ## il n'y a pas d'argument
+    film="$(zenity --title "Script LMDb" --entry --text "Recherche de film :" --width 220)"
+    recherchefilm
+    affichagegtk
 fi
 
 exit 0
