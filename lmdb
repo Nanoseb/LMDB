@@ -92,7 +92,7 @@ ecritcache () {
 
         ################ écriture de la BDD ###########################
 
-	sed -i 's/<\/xml>//; s/<\/table>//' "$lmdbbdd"
+        sed -i 's/<\/xml>//; s/<\/table>//' "$lmdbbdd"
 
         echo -e "<film>
             <id>$id</id>
@@ -198,7 +198,7 @@ affichagegtk () {
         imagedl "$image" &
     fi
 
-    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="Script LMDb"
+    echo -e "$title ($year) - $time \n de $real \n avec $actors \n $genre \n $rating/10 \n $plot" | zenity --text-info --title="LMDb"
     test=$?
     pkill display
     if [ "$test" = 0 ]
@@ -230,12 +230,12 @@ bdd () {
 ##### choix du film graphiquement (zenity) #####
 choixfilm () {
 
-    vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
+   # vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
 
-    if [ $? = 1 ] # test si le bouton annuler est pressé
-    then
-        exit 0
-    fi
+   # if [ $? = 1 ] # test si le bouton annuler est pressé
+   # then
+   #     exit 0
+   # fi
 
     if [ -z "vuc" ] # si rien n'est choisis
     then
@@ -376,7 +376,7 @@ then
                 xmlstarlet ed -d "/xml/table/film[id='$id']" "$lmdbbdd" > "$lmdbtemp"
                 mv "$lmdbtemp" "$lmdbbdd"
                 ecritcache
-		;;
+                ;;
             *)
                 manuel
                 ;;
@@ -389,6 +389,9 @@ then
                 ;;
             --choix)
                 choixfilm
+                ;;
+            -*)
+                manuel
                 ;;
             *)
                 film="$1"
