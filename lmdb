@@ -1,6 +1,6 @@
 #!/bin/bash
 # LMDb by Nanoseb
-# needs xmlstarlet zenity
+# dépends de xmlstarlet et zenity
 # Ce script fait des recherches sur imdb.com pour afficher des infos relatives a vos films de plusieurs façon
 # man
 #                               : affiche les infos du film (graphiquemant) par recherche
@@ -13,7 +13,7 @@
 
 
 # Video player
-player=mplayer
+player=vlc
 
 # cache
 lmdbbdd="$HOME/.lmdbbdd.xml"
@@ -280,12 +280,12 @@ bdd () {
 ##### choix du film graphiquement (zenity) #####
 choixfilm () {
 
-    # vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
+    #vuc=$(echo -e ";oui;\noui\n;non;\nnon" | zenity --title="LMDb" --list --width=220 --height=130 --column=1 --column 1 --text="Film déjà vu ?" --hide-header --hide-column 1)
 
-    # if [ $? = 1 ] # test si le bouton annuler est pressé
-    # then
-    #     exit 0
-    # fi
+    #if [ $? = 1 ] # test si le bouton annuler est pressé
+    #then
+    #    exit 0
+    #fi
 
     if [ -z "vuc" ] # si rien n'est choisis
     then
@@ -369,14 +369,14 @@ choixfilm () {
         then
             exit 0
         fi
-
+	chemin=""
+	filename=""
+	
         litcache
 
         affichagegtk
 
     done
-
-
 
 }
 
