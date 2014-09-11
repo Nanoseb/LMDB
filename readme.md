@@ -6,17 +6,18 @@ Ce script fait des recherches sur imdb.com pour afficher des infos relatives a v
 
 ## man
 
-*                               : affiche les infos du film (graphiquemant) par recherche
+*				: affiche les infos du film 
+(graphiquemant) par recherche
 
-* [film|fichier]                : affiche les infos du film en console
+* [film|fichier]		: affiche les infos du film en console
 
-* --bdd                         : ajoute le dossier courant à la base de donnée
+* --bdd				: ajoute le dossier courant à la base de donnée
 
-* --choix                       : pose des questions pour choisir le film parfait !
+* --choix			: pose des questions pour choisir le film parfait !
 
-* -i / --info  [film|fichier]   : affiche une fenêtre graphique (zenity) avec les infos du film
+* -i / --info  [film|fichier]	: affiche une fenêtre graphique (zenity) avec les infos du film
 
-* -c / --console [film|fichier] : affiche les infos du film en console
+* -c / --console [film|fichier]	: affiche les infos du film en console
 
 * -a / --ajout [fichier]        : ajoute le fichier dans la bdd en entrant manuelement l'url de la page imdb
 
