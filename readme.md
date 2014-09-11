@@ -39,3 +39,6 @@ Ce script fait des recherches sur imdb.com pour afficher des infos relatives a v
 
 
 </table>
+
+# Licence
+CC-By-SA
